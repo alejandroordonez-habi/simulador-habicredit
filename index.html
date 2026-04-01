@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habicredit · Simulador de Impacto de Tasas</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#6B21E8;--pl:#8B5CF6;--teal:#0FD9AF;--red:#F43F5E;
+  --amber:#F59E0B;--green:#10B981;
+  --bg:#0D0F14;--s1:#14171F;--s2:#1C2030;
+  --border:rgba(255,255,255,0.07);--text:#F0F2F7;--muted:#6B7280;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:16px;min-width:860px}
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.hdr h1{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.5px}
+.hdr p{color:var(--muted);font-size:11px;margin-top:3px}
+.live{display:flex;align-items:center;gap:6px;background:rgba(244,63,94,.15);border:1px solid rgba(244,63,94,.35);border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;color:var(--red)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--s1);color:var(--muted);transition:all .2s;font-family:'DM Sans',sans-serif}
+.tab.active{background:var(--purple);border-color:var(--purple);color:#fff}
+.panel{display:none}.panel.active{display:block}
+.pt{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.pt::before{content:'';width:3px;height:12px;background:var(--purple);border-radius:2px;flex-shrink:0}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px}
+.krow{display:grid;gap:10px;margin-bottom:12px}
+.k6{grid-template-columns:repeat(6,1fr)}
+.k4{grid-template-columns:repeat(4,1fr)}
+.k3{grid-template-columns:repeat(3,1fr)}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:11px 13px}
+.kpi.hl-red{border-color:rgba(244,63,94,.35);background:rgba(244,63,94,.05)}
+.kpi.hl-teal{border-color:rgba(15,217,175,.3);background:rgba(15,217,175,.04)}
+.kpi.hl-amber{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04)}
+.kpi.hl-purple{border-color:rgba(107,33,232,.35);background:rgba(107,33,232,.05)}
+.kl{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.kv{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;line-height:1}
+.ks{font-size:10px;margin-top:3px;color:var(--muted);line-height:1.3}
+.chart-wrap{position:relative}
+canvas.ch{display:block;width:100%}
+.leg-row{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.ll{width:18px;height:3px;border-radius:2px}
+.sim-grid{display:grid;grid-template-columns:250px 1fr;gap:12px}
+.ctrl-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px}
+.ct{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.ct::before{content:'';width:3px;height:10px;background:var(--teal);border-radius:2px}
+.cg{margin-bottom:12px}
+.cl{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;font-weight:500}
+.cv{font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--teal)}
+.ch-hint{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--s2);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--purple);cursor:pointer;box-shadow:0 0 0 3px rgba(107,33,232,.25)}
+input[type=range].r-red::-webkit-slider-thumb{background:var(--red);box-shadow:0 0 0 3px rgba(244,63,94,.25)}
+input[type=range].r-amber::-webkit-slider-thumb{background:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,.25)}
+input[type=range].r-teal::-webkit-slider-thumb{background:var(--teal);box-shadow:0 0 0 3px rgba(15,217,175,.25)}
+.divider{border:none;border-top:1px solid var(--border);margin:10px 0}
+.param-row{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px solid var(--border)}
+.param-row:last-child{border:none}
+.pk{color:var(--muted)}.pv{font-weight:700}
+.ic-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ic{background:var(--s2);border-radius:8px;padding:12px;border-left:3px solid}
+.ic.red{border-color:var(--red)}.ic.amber{border-color:var(--amber)}
+.ic.teal{border-color:var(--teal)}.ic.purple{border-color:var(--purple)}
+.ic-l{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.ic-v{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;line-height:1}
+.ic-s{font-size:10px;margin-top:3px;color:var(--muted);line-height:1.4}
+.tbl-wrap{overflow-y:auto;max-height:340px}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+thead th{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;padding:7px 9px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--s1);position:sticky;top:0}
+thead th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+tbody tr:hover{background:var(--s2)}
+tbody td{padding:7px 9px;text-align:right}
+tbody td:first-child{text-align:left;font-weight:600}
+.badge{border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700}
+.b-hist{background:rgba(107,107,107,.15);color:var(--muted)}
+.b-proj{background:rgba(244,63,94,.12);color:var(--red)}
+.neg{color:var(--red)}.pos{color:var(--teal)}.c-muted{color:var(--muted)}
+.note{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:9px 12px;font-size:11px;color:#D97706;line-height:1.5;margin-top:10px}
+.note strong{color:var(--amber)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.progress-track{background:var(--s1);border-radius:4px;height:8px;overflow:hidden;margin:6px 0}
+.progress-fill{height:100%;border-radius:4px;transition:width .4s}
+.prog-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <h1>Habicredit · Simulador de Impacto de Tasas</h1>
+    <p>Mar 2024–Mar 2026 · Elasticidades calibradas empíricamente · Proyección 12 meses</p>
+  </div>
+  <div class="live"><span class="dot"></span>BanRep: 11.25% · +200pbs desde piso</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('hist',this)">📊 Histórico</div>
+  <div class="tab" onclick="showTab('tasas',this)">📉 Impacto de Tasas</div>
+  <div class="tab" onclick="showTab('mercado',this)">🌍 Mercado &amp; Market Share</div>
+  <div class="tab" onclick="showTab('brokers',this)">👥 Calculadora de Brokers</div>
+  <div class="tab" onclick="showTab('datos',this)">📋 Datos</div>
+</div>
+
+<!-- TAB 1: HISTÓRICO -->
+<div id="tab-hist" class="panel active">
+  <div class="krow k6">
+    <div class="kpi"><div class="kl">Radicaciones Mar 26</div><div class="kv">3,563</div><div class="ks">Máx. histórico</div></div>
+    <div class="kpi hl-red"><div class="kl">Tasa BanRep</div><div class="kv" style="color:var(--red)">11.25%</div><div class="ks">+200pbs desde piso</div></div>
+    <div class="kpi"><div class="kl">Desembolsos Mar 26</div><div class="kv">536</div><div class="ks">↓ vs 579 feb</div></div>
+    <div class="kpi hl-amber"><div class="kl">Volumen Mar 26</div><div class="kv" style="color:var(--amber)">$109.8B</div><div class="ks">Meta: $200B</div></div>
+    <div class="kpi hl-teal"><div class="kl">Market share Mar 26</div><div class="kv" style="color:var(--teal)">5.62%</div><div class="ks">Mercado ~$1,952B</div></div>
+    <div class="kpi"><div class="kl">Brokers activos Mar 26</div><div class="kv">432</div><div class="ks">↑ desde 249 ago 24</div></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="pt">Tasa BanRep · Radicaciones · Aprobaciones · Desembolsos</div>
+    <div class="chart-wrap"><canvas id="chHist" class="ch" height="230"></canvas></div>
+    <div class="leg-row">
+      <span class="leg"><span class="ll" style="background:var(--red)"></span>Tasa BanRep (eje der.)</span>
+      <span class="leg"><span class="ll" style="background:var(--purple)"></span>Radicaciones</span>
+      <span class="leg"><span class="ll" style="background:var(--teal)"></span>Aprobaciones (CVR 53.4%)</span>
+      <span class="leg"><span class="ll" style="background:var(--amber)"></span>Desembolsos</span>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="pt">Brokers activos (externos, sin iBuyer)</div>
+      <div class="chart-wrap"><canvas id="chBr" class="ch" height="130"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="pt">Market share % · Tamaño mercado $B</div>
+      <div class="chart-wrap"><canvas id="chMs" class="ch" height="130"></canvas></div>
+      <div class="leg-row">
+        <span class="leg"><span class="ll" style="background:var(--teal)"></span>MS % (izq.)</span>
+        <span class="leg"><span class="ll" style="background:var(--purple);opacity:.6"></span>Mercado $B (der.)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: IMPACTO TASAS -->
+<div id="tab-tasas" class="panel">
+  <div class="sim-grid">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="ctrl-card">
+        <div class="ct">Escenario de tasas</div>
+        <div class="cg">
+          <div class="cl"><span>Alza adicional (pp)</span><span class="cv" id="vExtra">+0.00pp</span></div>
+          <input type="range" class="r-red" id="slExtra" min="0" max="2" step="0.25" value="0">
+          <div class="ch-hint">Sobre el 11.25% actual. Próxima reunión: 30 abr.</div>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>Meses a proyectar</span><span class="cv" id="vMeses">12</span></div>
+          <input type="range" id="slMeses" min="3" max="18" step="1" value="12">
+        </div>
+      </div>
+      <div class="ctrl-card">
+        <div class="ct">Elasticidades</div>
+        <div class="cg">
+          <div class="cl"><span>Elasticidad radicaciones</span><span class="cv" id="vBR">−2.17%</span></div>
+          <input type="range" class="r-amber" id="slBR" min="-6" max="-0.5" step="0.1" value="-2.175">
+          <div class="ch-hint">Empírico: −2.17%/pp BanRep</div>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>Elasticidad desembolsos</span><span class="cv" id="vBD">−10.74%</span></div>
+          <input type="range" class="r-red" id="slBD" min="-18" max="-2" step="0.25" value="-10.739">
+          <div class="ch-hint">Empírico: −10.74%/pp BanRep</div>
+        </div>
+        <div class="divider"></div>
+        <div class="param-row"><span class="pk">CVR maduro</span><span class="pv" style="color:var(--teal)">53.4%</span></div>
+        <div class="param-row"><span class="pk">Base rad (Mar 26)</span><span class="pv">3,563</span></div>
+        <div class="param-row"><span class="pk">Base des (Mar 26)</span><span class="pv">536</span></div>
+        <div class="param-row"><span class="pk">Ticket promedio</span><span class="pv">$204.8M</span></div>
+        <div class="param-row"><span class="pk">Acumulado vs piso</span><span class="pv" style="color:var(--red)">+200pbs</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="ic-strip">
+        <div class="ic red"><div class="ic-l">Rad (pico impacto)</div><div class="ic-v" style="color:var(--red)" id="iRad">—</div><div class="ic-s" id="iRadS">—</div></div>
+        <div class="ic amber"><div class="ic-l">Apr (pico impacto)</div><div class="ic-v" style="color:var(--amber)" id="iApr">—</div><div class="ic-s" id="iAprS">—</div></div>
+        <div class="ic red"><div class="ic-l">Des (pico impacto)</div><div class="ic-v" style="color:var(--red)" id="iDes">—</div><div class="ic-s" id="iDesS">—</div></div>
+        <div class="ic purple"><div class="ic-l">Volumen mínimo</div><div class="ic-v" style="color:var(--pl)" id="iVol">—</div><div class="ic-s" id="iVolS">—</div></div>
+      </div>
+      <div class="card">
+        <div class="pt">Proyección mes a mes</div>
+        <div class="chart-wrap"><canvas id="chProj" class="ch" height="200"></canvas></div>
+        <div class="leg-row">
+          <span class="leg"><span class="ll" style="background:var(--purple);opacity:.35"></span>Rad histórico</span>
+          <span class="leg"><span class="ll" style="background:var(--purple)"></span>Rad proyectado</span>
+          <span class="leg"><span class="ll" style="background:var(--amber);opacity:.35"></span>Des histórico</span>
+          <span class="leg"><span class="ll" style="background:var(--amber)"></span>Des proyectado</span>
+          <span class="leg"><span class="ll" style="background:rgba(244,63,94,.5)"></span>Meta 200K</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="pt">Tabla de proyección</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Mes</th><th>Tasa</th><th>Δ rad%</th><th>Radicaciones</th><th>Aprobaciones</th><th>Δ des%</th><th>Desembolsos</th><th>Volumen $B</th><th></th></tr></thead>
+            <tbody id="projTbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="note" id="scenNote"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: MERCADO -->
+<div id="tab-mercado" class="panel">
+  <div class="sim-grid">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="ctrl-card">
+        <div class="ct">Escenario de mercado</div>
+        <div class="cg">
+          <div class="cl"><span>Contracción del mercado</span><span class="cv" id="vContr">0%</span></div>
+          <input type="range" class="r-red" id="slContr" min="0" max="25" step="1" value="0">
+          <div class="ch-hint">% de reducción en el volumen total del mercado hipotecario.</div>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>Alza adicional BanRep (pp)</span><span class="cv" id="vExtraM">+0.00pp</span></div>
+          <input type="range" class="r-amber" id="slExtraM" min="0" max="2" step="0.25" value="0">
+          <div class="ch-hint">Impacta el volumen HC vía elasticidades empíricas.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="ct">Referencia actual</div>
+        <div class="param-row"><span class="pk">Mercado base (últ. 6m prom.)</span><span class="pv">$2,211B</span></div>
+        <div class="param-row"><span class="pk">Vol. HC Mar 26</span><span class="pv">$109.8B</span></div>
+        <div class="param-row"><span class="pk">Market share Mar 26</span><span class="pv" style="color:var(--teal)">5.62%</span></div>
+        <div class="param-row"><span class="pk">MS promedio histórico</span><span class="pv">4.62%</span></div>
+      </div>
+      <div class="ctrl-card">
+        <div class="ct">Resultado del escenario</div>
+        <div class="param-row"><span class="pk">Mercado proyectado</span><span class="pv" id="mMkt" style="color:var(--red)">—</span></div>
+        <div class="param-row"><span class="pk">Vol. HC proyectado</span><span class="pv" id="mHC">—</span></div>
+        <div class="param-row"><span class="pk">Market share resultante</span><span class="pv" id="mMS" style="color:var(--teal)">—</span></div>
+        <div class="param-row"><span class="pk">Δ share vs hoy</span><span class="pv" id="mDMS">—</span></div>
+        <div class="param-row"><span class="pk">Vol. para 9.1% de share</span><span class="pv" id="mV91">—</span></div>
+        <div class="note" id="mNote" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="krow k3">
+        <div class="kpi"><div class="kl">Mercado proyectado</div><div class="kv" style="color:var(--red)" id="mk1">—</div><div class="ks" id="mk1s">—</div></div>
+        <div class="kpi hl-teal"><div class="kl">MS con contracción</div><div class="kv" style="color:var(--teal)" id="mk2">—</div><div class="ks" id="mk2s">—</div></div>
+        <div class="kpi hl-purple"><div class="kl">Para 9.1% de share</div><div class="kv" style="color:var(--pl)" id="mk3">—</div><div class="ks" id="mk3s">—</div></div>
+      </div>
+      <div class="card">
+        <div class="pt">Market share en distintos escenarios de contracción</div>
+        <div class="chart-wrap"><canvas id="chMkt" class="ch" height="200"></canvas></div>
+        <div class="leg-row">
+          <span class="leg"><span class="ll" style="background:var(--purple)"></span>MS si vol HC se mantiene</span>
+          <span class="leg"><span class="ll" style="background:var(--amber)"></span>MS si HC cae con el mercado</span>
+          <span class="leg"><span class="ll" style="background:var(--red)"></span>MS con impacto de tasas en HC</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="pt">Escenarios de market share — tabla</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Contracción</th><th>Mercado $B</th><th>Vol HC actual $B</th><th>MS vol actual</th><th>Vol HC proyectado $B</th><th>MS proyectado</th></tr></thead>
+            <tbody id="mktTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: BROKERS -->
+<div id="tab-brokers" class="panel">
+  <div class="sim-grid">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="ctrl-card">
+        <div class="ct">Meta de desembolsos</div>
+        <div class="cg">
+          <div class="cl"><span>Meta mensual ($B COP)</span><span class="cv" id="vMeta">$200B</span></div>
+          <input type="range" class="r-teal" id="slMeta" min="50" max="300" step="10" value="200">
+        </div>
+        <div class="divider"></div>
+        <div class="ct">Parámetros operativos</div>
+        <div class="cg">
+          <div class="cl"><span>Rad/broker/mes objetivo</span><span class="cv" id="vRPB">7.5</span></div>
+          <input type="range" class="r-amber" id="slRPB" min="4" max="15" step="0.5" value="7.5">
+          <div class="ch-hint">Promedio últimos 8m: 6.23. Máx histórico: 7.60 (Mar 26).</div>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>Ticket promedio ($M)</span><span class="cv" id="vTicket">$205M</span></div>
+          <input type="range" id="slTicket" min="160" max="260" step="5" value="205">
+        </div>
+        <div class="divider"></div>
+        <div class="ct">Referencia actual (Mar 26)</div>
+        <div class="param-row"><span class="pk">CVR rad→des</span><span class="pv">~20.5%</span></div>
+        <div class="param-row"><span class="pk">CVR rad→apr</span><span class="pv">53.4%</span></div>
+        <div class="param-row"><span class="pk">Brokers externos</span><span class="pv">432</span></div>
+        <div class="param-row"><span class="pk">Rad/broker actual</span><span class="pv">7.48</span></div>
+        <div class="param-row"><span class="pk">iBuyer rad (fijo)</span><span class="pv">~278</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="krow k3">
+        <div class="kpi hl-teal"><div class="kl">Radicaciones necesarias</div><div class="kv" style="color:var(--teal)" id="bkRad">—</div><div class="ks" id="bkRadS">—</div></div>
+        <div class="kpi hl-purple"><div class="kl">Brokers necesarios</div><div class="kv" style="color:var(--pl)" id="bkN">—</div><div class="ks" id="bkNS">—</div></div>
+        <div class="kpi hl-amber"><div class="kl">O bien: rad/broker</div><div class="kv" style="color:var(--amber)" id="bkRPB2">—</div><div class="ks">Con los 432 brokers actuales</div></div>
+      </div>
+      <div class="card">
+        <div class="pt">Brechas vs. situación actual</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+              <span style="color:var(--muted)">Radicaciones actuales vs. necesarias</span>
+              <span id="bkRadPct" style="font-weight:700">—</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="bkRadBar" style="background:var(--teal)"></div></div>
+            <div class="prog-labels"><span>3,563 actual</span><span id="bkRadR">—</span></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+              <span style="color:var(--muted)">Brokers actuales vs. necesarios</span>
+              <span id="bkBrPct" style="font-weight:700">—</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="bkBrBar" style="background:var(--purple)"></div></div>
+            <div class="prog-labels"><span>432 actuales</span><span id="bkBrR">—</span></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+              <span style="color:var(--muted)">Rad/broker actual vs. objetivo</span>
+              <span id="bkRpbPct" style="font-weight:700">—</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="bkRpbBar" style="background:var(--amber)"></div></div>
+            <div class="prog-labels"><span>7.48 actual</span><span id="bkRpbR">—</span></div>
+          </div>
+        </div>
+        <div class="note" id="bkNote" style="margin-top:12px"></div>
+      </div>
+      <div class="card">
+        <div class="pt">Tabla de escenarios — brokers × productividad</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Brokers</th><th>Rad/broker</th><th>Rad ext.</th><th>Rad total</th><th>Desembolsos</th><th>Volumen $B</th><th>MS est.</th></tr></thead>
+            <tbody id="bkTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 5: DATOS -->
+<div id="tab-datos" class="panel">
+  <div class="krow k4" style="margin-bottom:12px">
+    <div class="kpi"><div class="kl">Elasticidad rad (emp.)</div><div class="kv" style="color:var(--amber)">−2.17%/pp</div><div class="ks">25 meses calibrados</div></div>
+    <div class="kpi"><div class="kl">Elasticidad des (emp.)</div><div class="kv" style="color:var(--red)">−10.74%/pp</div><div class="ks">Des mucho más sensibles</div></div>
+    <div class="kpi"><div class="kl">CVR maduro (rad→apr)</div><div class="kv" style="color:var(--teal)">53.4%</div><div class="ks">±2.4pp — muy estable</div></div>
+    <div class="kpi"><div class="kl">CVR directo (rad→des)</div><div class="kv">20.5%</div><div class="ks">Mediana histórica</div></div>
+  </div>
+  <div class="card">
+    <div class="pt">Datos históricos completos — 25 meses</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Mes</th><th>Tasa</th><th>Brokers</th><th>Radicaciones</th><th>Aprobaciones</th><th>CVR</th><th>Desembolsos</th><th>Volumen $B</th><th>Ticket $M</th><th>Mkt share</th><th>Mercado $B</th></tr></thead>
+        <tbody id="dataTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const HIST=[{"mes":"mar 2024","tasa":12.25,"rad":1709,"apr":877,"cvr":51.3,"des":254,"vol_b":47.1,"ticket":185.5,"ms_pct":3.36,"mkt_size_b":1400.7,"brokers":null},{"mes":"abr 2024","tasa":11.75,"rad":2206,"apr":1107,"cvr":50.2,"des":353,"vol_b":60.9,"ticket":172.4,"ms_pct":5.34,"mkt_size_b":1139.8,"brokers":null},{"mes":"may 2024","tasa":11.25,"rad":2066,"apr":1039,"cvr":50.3,"des":417,"vol_b":81.0,"ticket":194.3,"ms_pct":4.32,"mkt_size_b":1876.6,"brokers":null},{"mes":"jun 2024","tasa":10.75,"rad":1624,"apr":855,"cvr":52.6,"des":290,"vol_b":52.8,"ticket":182.1,"ms_pct":4.06,"mkt_size_b":1301.4,"brokers":null},{"mes":"jul 2024","tasa":10.75,"rad":2118,"apr":1213,"cvr":57.3,"des":458,"vol_b":83.8,"ticket":183.0,"ms_pct":6.17,"mkt_size_b":1357.6,"brokers":null},{"mes":"ago 2024","tasa":10.25,"rad":2105,"apr":1168,"cvr":55.5,"des":339,"vol_b":57.6,"ticket":169.9,"ms_pct":2.84,"mkt_size_b":2024.9,"brokers":249},{"mes":"sept 2024","tasa":10.25,"rad":2060,"apr":1077,"cvr":52.3,"des":343,"vol_b":56.1,"ticket":163.6,"ms_pct":3.55,"mkt_size_b":1578.7,"brokers":271},{"mes":"oct 2024","tasa":9.75,"rad":2102,"apr":1060,"cvr":50.4,"des":472,"vol_b":83.9,"ticket":177.7,"ms_pct":4.24,"mkt_size_b":1978.3,"brokers":270},{"mes":"nov 2024","tasa":9.75,"rad":1697,"apr":859,"cvr":50.6,"des":428,"vol_b":71.2,"ticket":166.4,"ms_pct":3.12,"mkt_size_b":2280.1,"brokers":254},{"mes":"dic 2024","tasa":9.5,"rad":1277,"apr":636,"cvr":49.8,"des":672,"vol_b":116.1,"ticket":172.7,"ms_pct":4.34,"mkt_size_b":2674.3,"brokers":231},{"mes":"ene 2025","tasa":9.5,"rad":1738,"apr":975,"cvr":56.1,"des":663,"vol_b":111.7,"ticket":168.5,"ms_pct":5.89,"mkt_size_b":1898.7,"brokers":258},{"mes":"feb 2025","tasa":9.5,"rad":2324,"apr":1261,"cvr":54.3,"des":616,"vol_b":112.3,"ticket":182.4,"ms_pct":4.43,"mkt_size_b":2533.4,"brokers":288},{"mes":"mar 2025","tasa":9.25,"rad":2267,"apr":1237,"cvr":54.6,"des":487,"vol_b":81.7,"ticket":167.8,"ms_pct":4.77,"mkt_size_b":1712.4,"brokers":294},{"mes":"abr 2025","tasa":9.25,"rad":2192,"apr":1179,"cvr":53.8,"des":533,"vol_b":98.7,"ticket":185.2,"ms_pct":6.06,"mkt_size_b":1627.5,"brokers":286},{"mes":"may 2025","tasa":9.25,"rad":2486,"apr":1325,"cvr":53.3,"des":501,"vol_b":90.3,"ticket":180.2,"ms_pct":3.81,"mkt_size_b":2368.4,"brokers":313},{"mes":"jun 2025","tasa":9.25,"rad":2212,"apr":1212,"cvr":54.8,"des":487,"vol_b":94.0,"ticket":193.1,"ms_pct":4.32,"mkt_size_b":2174.4,"brokers":302},{"mes":"jul 2025","tasa":9.25,"rad":2818,"apr":1592,"cvr":56.5,"des":634,"vol_b":124.0,"ticket":195.5,"ms_pct":6.94,"mkt_size_b":1787.3,"brokers":337},{"mes":"ago 2025","tasa":9.25,"rad":2504,"apr":1408,"cvr":56.2,"des":532,"vol_b":100.7,"ticket":189.3,"ms_pct":4.20,"mkt_size_b":2396.3,"brokers":354},{"mes":"sept 2025","tasa":9.25,"rad":3085,"apr":1710,"cvr":55.4,"des":575,"vol_b":110.2,"ticket":191.7,"ms_pct":4.51,"mkt_size_b":2444.0,"brokers":384},{"mes":"oct 2025","tasa":9.25,"rad":3266,"apr":1779,"cvr":54.5,"des":597,"vol_b":112.9,"ticket":189.1,"ms_pct":4.08,"mkt_size_b":2765.4,"brokers":420},{"mes":"nov 2025","tasa":9.25,"rad":2529,"apr":1275,"cvr":50.4,"des":519,"vol_b":106.0,"ticket":204.3,"ms_pct":5.33,"mkt_size_b":1987.8,"brokers":382},{"mes":"dic 2025","tasa":9.25,"rad":2594,"apr":1419,"cvr":54.7,"des":531,"vol_b":116.8,"ticket":220.0,"ms_pct":4.42,"mkt_size_b":2641.5,"brokers":360},{"mes":"ene 2026","tasa":10.25,"rad":2332,"apr":1284,"cvr":55.1,"des":498,"vol_b":91.9,"ticket":184.6,"ms_pct":4.49,"mkt_size_b":2047.3,"brokers":332},{"mes":"feb 2026","tasa":10.25,"rad":3518,"apr":1879,"cvr":53.4,"des":579,"vol_b":119.2,"ticket":205.8,"ms_pct":6.37,"mkt_size_b":1872.0,"brokers":408},{"mes":"mar 2026","tasa":11.25,"rad":3563,"apr":1903,"cvr":53.4,"des":536,"vol_b":109.8,"ticket":204.8,"ms_pct":5.62,"mkt_size_b":1951.9,"brokers":432}];
+
+const CVR=0.534,CVR_DES=0.205,TICKET_BASE=204.8,TASA_ACT=11.25,TASA_PISO=9.25,MKT_BASE=2211,IBUYER_RAD=278,EXT_BROKERS=432;
+const LAG_RAD=[0.05,0.10,0.20,0.35,0.50,0.70,0.85,0.93,0.98,1.0];
+const LAG_DES=[0.40,0.55,0.70,0.80,0.88,0.93,0.97,0.99,1.0,1.0];
+const MES_ES=['ene','feb','mar','abr','may','jun','jul','ago','sept','oct','nov','dic'];
+
+function nextMonth(m){const p=m.split(' ');const i=MES_ES.indexOf(p[0]);const y=parseInt(p[1]);return i===11?'ene '+(y+1):MES_ES[i+1]+' '+y;}
+function fmt(n){return Math.round(n).toLocaleString('es-CO');}
+function fmtPct(n){return(n>=0?'+':'')+n.toFixed(1)+'%';}
+
+function showTab(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+  setTimeout(()=>{
+    if(id==='tasas'){updateTasas();drawProj();}
+    if(id==='mercado'){updateMercado();drawMkt();}
+    if(id==='brokers')updateBrokers();
+  },30);
+}
+
+function setupCanvas(id,h){
+  const c=document.getElementById(id);if(!c)return null;
+  const dpr=window.devicePixelRatio||1;
+  const W=c.parentElement.offsetWidth;
+  c.width=W*dpr;c.height=h*dpr;c.style.height=h+'px';
+  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  return{ctx,W,H:h};
+}
+function line(ctx,pts,col,lw,dash){
+  ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(p[0],p[1]):ctx.lineTo(p[0],p[1]));
+  ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.setLineDash(dash||[]);ctx.stroke();ctx.setLineDash([]);
+}
+function area(ctx,pts,col,baseY){
+  ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(p[0],p[1]):ctx.lineTo(p[0],p[1]));
+  ctx.lineTo(pts[pts.length-1][0],baseY);ctx.lineTo(pts[0][0],baseY);ctx.closePath();
+  ctx.fillStyle=col;ctx.fill();
+}
+
+function drawHist(){
+  const s=setupCanvas('chHist',230);if(!s)return;
+  const{ctx,W,H}=s;
+  const PAD={top:22,right:52,bottom:28,left:48};
+  const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom,N=HIST.length;
+  const xP=i=>PAD.left+(i/(N-1))*cW;
+  const yL=v=>PAD.top+cH-((v-0)/(4000-0))*cH;
+  const yR=v=>PAD.top+cH-((v-8.5)/(13.5-8.5))*cH;
+  ctx.fillStyle='#14171F';ctx.fillRect(0,0,W,H);
+  [0,1000,2000,3000,4000].forEach(v=>{
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PAD.left,yL(v));ctx.lineTo(PAD.left+cW,yL(v));ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='9px DM Sans';ctx.textAlign='right';
+    ctx.fillText(v===0?'0':v/1000+'k',PAD.left-4,yL(v)+4);
+  });
+  [9,10,11,12,13].forEach(v=>{ctx.fillStyle='rgba(244,63,94,0.4)';ctx.font='9px DM Sans';ctx.textAlign='left';ctx.fillText(v+'%',PAD.left+cW+5,yR(v)+4);});
+  const hx=xP(21);
+  ctx.fillStyle='rgba(244,63,94,0.04)';ctx.fillRect(hx,PAD.top,PAD.left+cW-hx,cH);
+  ctx.fillStyle='rgba(244,63,94,0.3)';ctx.font='bold 8px Syne';ctx.textAlign='center';
+  ctx.fillText('CICLO ALCISTA',hx+(PAD.left+cW-hx)/2,PAD.top+10);
+  const tPts=HIST.map((d,i)=>[xP(i),yR(d.tasa)]);
+  area(ctx,tPts,'rgba(244,63,94,0.07)',H);
+  line(ctx,tPts,'rgba(244,63,94,0.85)',2.5);
+  const rPts=HIST.map((d,i)=>[xP(i),yL(d.rad)]);
+  area(ctx,rPts,'rgba(107,33,232,0.10)',PAD.top+cH);
+  line(ctx,rPts,'rgba(107,33,232,0.9)',2);
+  line(ctx,HIST.map((d,i)=>[xP(i),yL(d.apr)]),'rgba(15,217,175,0.7)',1.5,[5,3]);
+  line(ctx,HIST.map((d,i)=>[xP(i),yL(d.des)]),'rgba(245,158,11,0.9)',2);
+  [[21],[23]].forEach(([idx])=>{
+    ctx.beginPath();ctx.arc(xP(idx),yR(HIST[idx].tasa),5,0,Math.PI*2);
+    ctx.fillStyle='#F43F5E';ctx.fill();ctx.strokeStyle='#0D0F14';ctx.lineWidth=1.5;ctx.stroke();
+  });
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px DM Sans';ctx.textAlign='center';
+  HIST.forEach((d,i)=>{if(i%4===0||i===N-1)ctx.fillText(d.mes,xP(i),H-4);});
+}
+
+function drawBr(){
+  const s=setupCanvas('chBr',130);if(!s)return;
+  const{ctx,W,H}=s;
+  const PAD={top:14,right:14,bottom:22,left:40};
+  const data=HIST.filter(d=>d.brokers!=null),N=data.length;
+  const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom;
+  const xP=i=>PAD.left+(i/(N-1))*cW;
+  const yP=v=>PAD.top+cH-((v-200)/(500-200))*cH;
+  ctx.fillStyle='#14171F';ctx.fillRect(0,0,W,H);
+  [250,350,450].forEach(v=>{
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PAD.left,yP(v));ctx.lineTo(PAD.left+cW,yP(v));ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='9px DM Sans';ctx.textAlign='right';
+    ctx.fillText(v,PAD.left-4,yP(v)+4);
+  });
+  const pts=data.map((d,i)=>[xP(i),yP(d.brokers)]);
+  area(ctx,pts,'rgba(15,217,175,0.10)',PAD.top+cH);
+  line(ctx,pts,'rgba(15,217,175,0.9)',2);
+  data.forEach((d,i)=>{ctx.beginPath();ctx.arc(xP(i),yP(d.brokers),3,0,Math.PI*2);ctx.fillStyle='rgba(15,217,175,0.9)';ctx.fill();});
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px DM Sans';ctx.textAlign='center';
+  data.forEach((d,i)=>{if(i%3===0||i===N-1)ctx.fillText(d.mes,xP(i),H-4);});
+}
+
+function drawMs(){
+  const s=setupCanvas('chMs',130);if(!s)return;
+  const{ctx,W,H}=s;
+  const PAD={top:14,right:46,bottom:22,left:36};
+  const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom,N=HIST.length;
+  const xP=i=>PAD.left+(i/(N-1))*cW;
+  const yL=v=>PAD.top+cH-((v-2)/(8-2))*cH;
+  const yR=v=>PAD.top+cH-((v-800)/(3100-800))*cH;
+  ctx.fillStyle='#14171F';ctx.fillRect(0,0,W,H);
+  [2,4,6,8].forEach(v=>{
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PAD.left,yL(v));ctx.lineTo(PAD.left+cW,yL(v));ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='9px DM Sans';ctx.textAlign='right';
+    ctx.fillText(v+'%',PAD.left-3,yL(v)+4);
+  });
+  [1000,2000,3000].forEach(v=>{ctx.fillStyle='rgba(107,33,232,0.4)';ctx.font='9px DM Sans';ctx.textAlign='left';ctx.fillText('$'+v+'B',PAD.left+cW+4,yR(v)+4);});
+  line(ctx,HIST.map((d,i)=>[xP(i),yL(d.ms_pct)]),'rgba(15,217,175,0.85)',2);
+  line(ctx,HIST.map((d,i)=>[xP(i),yR(d.mkt_size_b)]),'rgba(107,33,232,0.65)',1.5,[5,3]);
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px DM Sans';ctx.textAlign='center';
+  HIST.forEach((d,i)=>{if(i%6===0||i===N-1)ctx.fillText(d.mes,xP(i),H-4);});
+}
+
+function computeProj(xP,n,bR,bD){
+  const base=HIST[HIST.length-1];
+  let cur=base.mes;const rows=[];
+  for(let M=1;M<=n;M++){
+    cur=nextMonth(cur);
+    let dR=0,dD=0;
+    dR+=(bR/100)*1.0*(LAG_RAD[Math.min(2+M,9)]-LAG_RAD[Math.min(2,9)]);
+    dD+=(bD/100)*1.0*(LAG_DES[Math.min(2+M,9)]-LAG_DES[Math.min(2,9)]);
+    dR+=(bR/100)*1.0*(LAG_RAD[Math.min(M,9)]-LAG_RAD[0]);
+    dD+=(bD/100)*1.0*(LAG_DES[Math.min(M,9)]-LAG_DES[0]);
+    if(xP>0&&M>=1){dR+=(bR/100)*xP*LAG_RAD[Math.min(M-1,9)];dD+=(bD/100)*xP*LAG_DES[Math.min(M-1,9)];}
+    const rad=Math.round(base.rad*(1+dR));
+    rows.push({mes:cur,M,tasa:TASA_ACT+xP,dR:dR*100,dD:dD*100,rad,apr:Math.round(rad*CVR),des:Math.round(base.des*(1+dD)),vol:Math.round(Math.round(base.des*(1+dD))*TICKET_BASE/10)/100});
+  }
+  return rows;
+}
+
+function updateTasas(){
+  const xP=parseFloat(document.getElementById('slExtra').value);
+  const n=parseInt(document.getElementById('slMeses').value);
+  const bR=parseFloat(document.getElementById('slBR').value);
+  const bD=parseFloat(document.getElementById('slBD').value);
+  document.getElementById('vExtra').textContent=(xP>=0?'+':'')+xP.toFixed(2)+'pp';
+  document.getElementById('vMeses').textContent=n;
+  document.getElementById('vBR').textContent=bR.toFixed(2)+'%';
+  document.getElementById('vBD').textContent=bD.toFixed(2)+'%';
+  const proj=computeProj(xP,n,bR,bD);
+  const base=HIST[HIST.length-1];
+  const pkR=proj.reduce((a,b)=>Math.abs(b.dR)>Math.abs(a.dR)?b:a);
+  const pkD=proj.reduce((a,b)=>Math.abs(b.dD)>Math.abs(a.dD)?b:a);
+  document.getElementById('iRad').textContent=fmt(pkR.rad);
+  document.getElementById('iRadS').textContent=fmtPct(pkR.dR)+' vs base '+fmt(base.rad)+' ('+pkR.mes+')';
+  document.getElementById('iApr').textContent=fmt(pkR.apr);
+  document.getElementById('iAprS').textContent='CVR 53.4% sobre rad proyectadas';
+  document.getElementById('iDes').textContent=fmt(pkD.des);
+  document.getElementById('iDesS').textContent=fmtPct(pkD.dD)+' vs base '+base.des+' ('+pkD.mes+')';
+  const minV=Math.min(...proj.map(p=>p.vol));
+  document.getElementById('iVol').textContent='$'+minV.toFixed(1)+'B';
+  document.getElementById('iVolS').textContent='Mínimo proyectado. Meta: $200B';
+  const tb=document.getElementById('projTbody');tb.innerHTML='';
+  HIST.slice(-3).forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.mes}</td><td>${r.tasa}%</td><td class="c-muted">—</td><td>${fmt(r.rad)}</td><td>${fmt(r.apr)}</td><td class="c-muted">—</td><td>${r.des}</td><td>$${r.vol_b}B</td><td><span class="badge b-hist">HIST</span></td>`;
+    tb.appendChild(tr);
+  });
+  proj.forEach(r=>{
+    const tr=document.createElement('tr');
+    const rc=r.dR<-3?'neg':r.dR>0?'pos':'';const dc=r.dD<-5?'neg':r.dD>0?'pos':'';
+    tr.innerHTML=`<td>${r.mes}</td><td>${r.tasa.toFixed(2)}%</td><td class="${rc}">${r.dR.toFixed(1)}%</td><td class="${rc}">${fmt(r.rad)}</td><td>${fmt(r.apr)}</td><td class="${dc}">${r.dD.toFixed(1)}%</td><td class="${dc}">${fmt(r.des)}</td><td>$${r.vol.toFixed(1)}B</td><td><span class="badge b-proj">PROY</span></td>`;
+    tb.appendChild(tr);
+  });
+  const tot=TASA_ACT-TASA_PISO+xP;
+  document.getElementById('scenNote').innerHTML=`<strong>Escenario:</strong> Tasa total ${(TASA_ACT+xP).toFixed(2)}% (+${tot.toFixed(2)}pp vs piso 9.25%). Impacto acumulado estimado: rad ${(bR*tot).toFixed(1)}%, des ${(bD*tot).toFixed(1)}%. Pico rad: <strong>${pkR.mes}</strong>. Pico des: <strong>${pkD.mes}</strong>.`;
+  drawProj();
+}
+
+function drawProj(){
+  const s=setupCanvas('chProj',200);if(!s)return;
+  const{ctx,W,H}=s;
+  const xP2=parseFloat(document.getElementById('slExtra').value);
+  const n=parseInt(document.getElementById('slMeses').value);
+  const bR=parseFloat(document.getElementById('slBR').value);
+  const bD=parseFloat(document.getElementById('slBD').value);
+  const proj=computeProj(xP2,n,bR,bD);
+  const histS=HIST.slice(-6),all=[...histS,...proj],N=all.length,si=histS.length-1;
+  const PAD={top:20,right:14,bottom:28,left:48};
+  const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom;
+  const xP=i=>PAD.left+(i/(N-1))*cW;
+  const maxY=Math.max(...all.map(d=>d.rad),1000)+300;
+  const yP=v=>PAD.top+cH-((v-0)/maxY)*cH;
+  ctx.fillStyle='#14171F';ctx.fillRect(0,0,W,H);
+  const tDes=Math.round(200000/TICKET_BASE);
+  const yT=yP(tDes);
+  ctx.strokeStyle='rgba(244,63,94,0.35)';ctx.lineWidth=1;ctx.setLineDash([6,4]);
+  ctx.beginPath();ctx.moveTo(PAD.left,yT);ctx.lineTo(PAD.left+cW,yT);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(244,63,94,0.45)';ctx.font='9px Syne';ctx.textAlign='left';
+  ctx.fillText('Meta des 200K ('+fmt(tDes)+')',PAD.left+4,yT-4);
+  [0,500,1000,2000,3000,4000].filter(v=>v<=maxY).forEach(v=>{
+    ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PAD.left,yP(v));ctx.lineTo(PAD.left+cW,yP(v));ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='9px DM Sans';ctx.textAlign='right';
+    ctx.fillText(v>=1000?v/1000+'k':v,PAD.left-4,yP(v)+4);
+  });
+  ctx.fillStyle='rgba(244,63,94,0.04)';ctx.fillRect(xP(si),PAD.top,xP(N-1)-xP(si),cH);
+  const hR=histS.map((d,i)=>[xP(i),yP(d.rad)]);
+  line(ctx,hR,'rgba(107,33,232,0.3)',2);
+  const pR=[hR[hR.length-1],...proj.map((d,i)=>[xP(si+1+i),yP(d.rad)])];
+  area(ctx,pR,'rgba(107,33,232,0.09)',PAD.top+cH);
+  line(ctx,pR,'rgba(107,33,232,0.9)',2.5);
+  line(ctx,histS.map((d,i)=>[xP(i),yP(d.des)]),'rgba(245,158,11,0.3)',2);
+  const pD=[histS.map((d,i)=>[xP(i),yP(d.des)]).slice(-1)[0],...proj.map((d,i)=>[xP(si+1+i),yP(d.des)])];
+  line(ctx,pD,'rgba(245,158,11,0.9)',2.5);
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px DM Sans';ctx.textAlign='center';
+  all.forEach((d,i)=>{if(i%3===0||i===N-1)ctx.fillText(d.mes,xP(i),H-4);});
+}
+
+function updateMercado(){
+  const c=parseFloat(document.getElementById('slContr').value)/100;
+  const xM=parseFloat(document.getElementById('slExtraM').value);
+  document.getElementById('vContr').textContent=(c*100).toFixed(0)+'%';
+  document.getElementById('vExtraM').textContent=(xM>=0?'+':'')+xM.toFixed(2)+'pp';
+  const mktNew=MKT_BASE*(1-c);
+  const hcBase=109.8;
+  const totDelta=(TASA_ACT-TASA_PISO+xM);
+  const hcProj=hcBase*(1+(-10.739/100)*totDelta);
+  const msNew=hcProj/mktNew*100;
+  const msDelta=msNew-5.62;
+  const volFor91=mktNew*0.091;
+  document.getElementById('mMkt').textContent='$'+mktNew.toFixed(0)+'B';
+  document.getElementById('mHC').textContent='$'+hcProj.toFixed(1)+'B';
+  document.getElementById('mMS').textContent=msNew.toFixed(2)+'%';
+  document.getElementById('mDMS').textContent=(msDelta>=0?'+':'')+msDelta.toFixed(2)+'pp vs hoy';
+  document.getElementById('mV91').textContent='$'+volFor91.toFixed(0)+'B';
+  document.getElementById('mk1').textContent='$'+mktNew.toFixed(0)+'B';
+  document.getElementById('mk1s').textContent='−'+(c*100).toFixed(0)+'% vs base $'+MKT_BASE+'B';
+  document.getElementById('mk2').textContent=msNew.toFixed(2)+'%';
+  document.getElementById('mk2s').textContent=(msDelta>=0?'+':'')+msDelta.toFixed(2)+'pp vs 5.62% actual';
+  document.getElementById('mk3').textContent='$'+volFor91.toFixed(0)+'B/mes';
+  document.getElementById('mk3s').textContent='Para 9.1% share en mercado contraído';
+  const easy=volFor91<hcBase?'más fácil de alcanzar con el mercado contraído':'requiere crecimiento absoluto';
+  document.getElementById('mNote').innerHTML=`<strong>Lectura del escenario:</strong> Con contracción del ${(c*100).toFixed(0)}%, el objetivo de 9.1% de market share es ${easy}. Si HC cae menos que el mercado, gana share automáticamente.`;
+  const tb=document.getElementById('mktTbody');tb.innerHTML='';
+  [0,5,8,10,15,20,25].forEach(pct=>{
+    const mk=MKT_BASE*(1-pct/100);
+    const msA=hcBase/mk*100;
+    const hcP=hcBase*(1+(-10.739/100)*(TASA_ACT-TASA_PISO+xM));
+    const msP=hcP/mk*100;
+    const tr=document.createElement('tr');
+    if(pct===Math.round(c*100))tr.style.background='rgba(107,33,232,0.1)';
+    tr.innerHTML=`<td>${pct===0?'Sin contracción':'-'+pct+'%'}</td><td>$${mk.toFixed(0)}B</td><td>$${hcBase.toFixed(1)}B</td><td style="color:var(--teal);font-weight:700">${msA.toFixed(2)}%</td><td>$${hcP.toFixed(1)}B</td><td style="color:${msP>5.62?'var(--teal)':'var(--amber)'};font-weight:700">${msP.toFixed(2)}%</td>`;
+    tb.appendChild(tr);
+  });
+  drawMkt();
+}
+
+function drawMkt(){
+  const s=setupCanvas('chMkt',200);if(!s)return;
+  const{ctx,W,H}=s;
+  const PAD={top:20,right:14,bottom:28,left:42};
+  const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom;
+  const contr=parseFloat(document.getElementById('slContr').value)/100;
+  const xM=parseFloat(document.getElementById('slExtraM').value);
+  ctx.fillStyle='#14171F';ctx.fillRect(0,0,W,H);
+  const pcts=[0,5,8,10,15,20,25],N=pcts.length;
+  const xP=i=>PAD.left+(i/(N-1))*cW;
+  const yP=v=>PAD.top+cH-((v-0)/(12-0))*cH;
+  [2,4,6,8,10].forEach(v=>{
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PAD.left,yP(v));ctx.lineTo(PAD.left+cW,yP(v));ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.22)';ctx.font='9px DM Sans';ctx.textAlign='right';
+    ctx.fillText(v+'%',PAD.left-4,yP(v)+4);
+  });
+  ctx.strokeStyle='rgba(15,217,175,0.3)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(PAD.left,yP(5.62));ctx.lineTo(PAD.left+cW,yP(5.62));ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(15,217,175,0.4)';ctx.font='9px Syne';ctx.textAlign='right';
+  ctx.fillText('actual 5.62%',PAD.left+cW-4,yP(5.62)-4);
+  const pts1=pcts.map((p,i)=>[xP(i),(109.8/(MKT_BASE*(1-p/100)))*100]);
+  line(ctx,pts1.map((v,i)=>[xP(i),yP(v[1])]),'rgba(107,33,232,0.9)',2.5);
+  const flat=pcts.map((_,i)=>[xP(i),yP(5.62)]);
+  line(ctx,flat,'rgba(245,158,11,0.6)',1.5,[5,3]);
+  const hcP2=109.8*(1+(-10.739/100)*(TASA_ACT-TASA_PISO+xM));
+  const pts2=pcts.map((p,i)=>[xP(i),(hcP2/(MKT_BASE*(1-p/100)))*100]);
+  line(ctx,pts2.map((v,i)=>[xP(i),yP(v[1])]),'rgba(244,63,94,0.8)',2,[3,3]);
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px DM Sans';ctx.textAlign='center';
+  pcts.forEach((p,i)=>ctx.fillText('-'+p+'%',xP(i),H-4));
+}
+
+function updateBrokers(){
+  const metaB=parseFloat(document.getElementById('slMeta').value)*1000;
+  const rpbObj=parseFloat(document.getElementById('slRPB').value);
+  const tick=parseFloat(document.getElementById('slTicket').value);
+  document.getElementById('vMeta').textContent='$'+parseFloat(document.getElementById('slMeta').value).toFixed(0)+'B';
+  document.getElementById('vRPB').textContent=rpbObj.toFixed(1);
+  document.getElementById('vTicket').textContent='$'+tick.toFixed(0)+'M';
+  const desNeed=Math.round(metaB/tick);
+  const radNeed=Math.round(desNeed/CVR_DES);
+  const radExtNeed=Math.max(radNeed-IBUYER_RAD,0);
+  const brkNeed=Math.round(radExtNeed/rpbObj);
+  const rpbNeed=radExtNeed/EXT_BROKERS;
+  document.getElementById('bkRad').textContent=fmt(radNeed);
+  document.getElementById('bkRadS').textContent=fmt(desNeed)+' des × CVR⁻¹';
+  document.getElementById('bkN').textContent=fmt(brkNeed);
+  document.getElementById('bkNS').textContent='A '+rpbObj.toFixed(1)+' rad/broker/mes';
+  document.getElementById('bkRPB2').textContent=rpbNeed.toFixed(1);
+  const radAct=3563;
+  const radPct=Math.min(radAct/radNeed*100,100);
+  document.getElementById('bkRadBar').style.width=radPct+'%';
+  document.getElementById('bkRadBar').style.background=radPct>=90?'var(--teal)':radPct>=60?'var(--amber)':'var(--red)';
+  document.getElementById('bkRadPct').textContent=radPct.toFixed(0)+'% del objetivo';
+  document.getElementById('bkRadR').textContent=fmt(radNeed)+' necesarias';
+  const brPct=Math.min(EXT_BROKERS/brkNeed*100,100);
+  document.getElementById('bkBrBar').style.width=brPct+'%';
+  document.getElementById('bkBrBar').style.background=brPct>=90?'var(--teal)':brPct>=60?'var(--amber)':'var(--purple)';
+  document.getElementById('bkBrPct').textContent=brPct.toFixed(0)+'% del objetivo';
+  document.getElementById('bkBrR').textContent=fmt(brkNeed)+' necesarios';
+  const rpbAct=7.48;
+  const rpbPct=Math.min(rpbAct/rpbNeed*100,100);
+  document.getElementById('bkRpbBar').style.width=Math.min(rpbPct,100)+'%';
+  document.getElementById('bkRpbBar').style.background=rpbPct>=90?'var(--teal)':'var(--amber)';
+  document.getElementById('bkRpbPct').textContent=rpbPct.toFixed(0)+'% del objetivo';
+  document.getElementById('bkRpbR').textContent=rpbNeed.toFixed(1)+' objetivo';
+  const gap=brkNeed-EXT_BROKERS;
+  const rpbGap=rpbNeed-rpbAct;
+  document.getElementById('bkNote').innerHTML=`<strong>Para llegar a $${document.getElementById('slMeta').value}B/mes</strong> necesitas generar <strong>${fmt(radNeed)} radicaciones</strong> mensuales. ${gap>0?`Manteniendo productividad actual, necesitarías <strong>${fmt(brkNeed)} brokers</strong> (+${fmt(gap)} vs los ${EXT_BROKERS} actuales).`:`Con ${EXT_BROKERS} brokers actuales alcanza.`} ${rpbGap>0?`Con brokers actuales, cada uno debería producir <strong>${rpbNeed.toFixed(1)} rad/mes</strong> (+${rpbGap.toFixed(1)} vs 7.48 actuales).`:''}`;
+  const tb=document.getElementById('bkTbody');tb.innerHTML='';
+  [350,400,432,500,550,600].forEach(b=>{
+    [rpbObj,rpbObj+1.5,rpbObj+3].forEach(r=>{
+      const rExt=b*r,rTot=rExt+IBUYER_RAD,d=Math.round(rTot*CVR_DES),v=d*tick/1000,ms=v/MKT_BASE*100;
+      const isTarget=Math.abs(v-parseFloat(document.getElementById('slMeta').value))<15;
+      const tr=document.createElement('tr');
+      if(isTarget)tr.style.background='rgba(15,217,175,0.08)';
+      tr.innerHTML=`<td>${b}</td><td>${r.toFixed(1)}</td><td>${fmt(rExt)}</td><td>${fmt(rTot)}</td><td>${fmt(d)}</td><td style="font-weight:700;color:${v>=parseFloat(document.getElementById('slMeta').value)?'var(--teal)':'var(--muted)'}">$${v.toFixed(1)}B</td><td>${ms.toFixed(2)}%</td>`;
+      tb.appendChild(tr);
+    });
+  });
+}
+
+function buildData(){
+  const tb=document.getElementById('dataTbody');
+  [...HIST].reverse().forEach(r=>{
+    const isT=r.mes==='mar 2026';
+    const tr=document.createElement('tr');
+    if(isT)tr.style.background='rgba(244,63,94,0.06)';
+    const tc=r.tasa>=11?'var(--red)':r.tasa<=9.25?'var(--green)':'var(--amber)';
+    tr.innerHTML=`<td>${r.mes}${isT?' ⚡':''}</td><td style="color:${tc};font-weight:700">${r.tasa}%</td><td>${r.brokers??'—'}</td><td>${fmt(r.rad)}</td><td>${fmt(r.apr)}</td><td>${r.cvr.toFixed(1)}%</td><td style="font-weight:600;color:${r.des>600?'var(--teal)':r.des<400?'var(--red)':'inherit'}">${r.des}</td><td>$${r.vol_b}B</td><td>$${r.ticket.toFixed(0)}M</td><td style="color:var(--teal)">${r.ms_pct.toFixed(2)}%</td><td>$${r.mkt_size_b.toFixed(0)}B</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+window.addEventListener('load',()=>{
+  drawHist();drawBr();drawMs();buildData();updateTasas();updateMercado();updateBrokers();
+  ['slExtra','slMeses','slBR','slBD'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{updateTasas();}));
+  ['slContr','slExtraM'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{updateMercado();}));
+  ['slMeta','slRPB','slTicket'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{updateBrokers();}));
+});
+</script>
+</body>
+</html>
